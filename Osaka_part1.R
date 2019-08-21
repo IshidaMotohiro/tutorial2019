@@ -1,14 +1,11 @@
 
 ## --------------------------------------------------------------
-## MeCaのインストールについてはを
+## MeCabおよｂRMeCabについては
 browseURL("https://sites.google.com/site/rmecab/")
-##参照
 
-#library(RMeCab)
-# utf8フォルダないしsjisフォルダにファイルがあるとする
-#df <- docDF("utf8", type = 1)
 
-load("df.Rdata")
+download.file("https://github.com/IshidaMotohiro/tutorial2019/blob/master/df.Rdata?raw=true", destfile= "df.Rdata")
+df <- read.csv("df.Rdata") 
 
 ## ------------------------------------------------------------------------
 head(df)
@@ -45,6 +42,7 @@ df$標準化 <- scale(df$合計)
 df %>% head()
 
 
+## tidyなデータ処理
 ## --------------------------------------------------------------
 ## install.packages("tidyverse")
 library(tidyverse)
@@ -52,7 +50,7 @@ library(tidyverse)
 
 
 ## --------------------------------------------------------------
-df %>% head
+df %>% head()
 
 
 ## --------------------------------------------------------------
@@ -176,7 +174,8 @@ df %>% gather(key = Doc, value = FREQ,
               文書1, 文書2, 文書3) %>% head()
 
 
-## seiseki_Demo.Rを参照
+
+##退屈なことはRにやらせよう：詳細はseiseki_Demo.Rを参照
 ## ------------------------------------------------------------------------
 学生番号 <- stri_trans_nfkc_casefold(
  "１０１８０５１４５８石田基広.xlsx") %>%
@@ -188,6 +187,7 @@ df %>% gather(key = Doc, value = FREQ,
 学生番号
 
 
+## ggplot2
 
 ## ------グラフィックスの日本語設定------------------------------------------------------------------
 source("http://rmecab.jp/R/Rprofile.R")

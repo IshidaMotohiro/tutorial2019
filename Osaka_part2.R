@@ -112,7 +112,10 @@ gap_lm %>% unnest(glanced, .drop = TRUE)
 gap_lm %>% unnest(augmented, .drop = TRUE)
 
 
+## 機械学習
+
 ## --------- 加工済みデータ -----------------------------------------------------
+download.file("https://github.com/IshidaMotohiro/tutorial2019/blob/master/iPhone.Rdata?raw=true", destfile= "iPhone.Rdata")
 load("iPhone.Rdata")
 
 
@@ -193,7 +196,9 @@ y2 <- testing$Y
 
 
 ## ----- 並列化 ---------------------------------------------------------
-
+library(doParallel)# 並列化
+cl <- makeCluster(4) 
+registerDoParallel(cl)
 
 ## ------（時間がかかる処理）--------------------------------------------------------
 lasso_cv <-
