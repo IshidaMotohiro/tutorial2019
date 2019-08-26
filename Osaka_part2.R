@@ -94,7 +94,7 @@ gapminder %>% filter(country == "Japan") %>%
 ## ------------------------------------------------------------------------
   gapminder %>% nest (-country) %>% 
   mutate(fit = map(data, ~ 
-            lm(data=.x, lifeExp ~ gdpPercap)),
+            lm(data=., lifeExp ~ gdpPercap)),
          res = map(fit, tidy)) %>% unnest(res)
 
 
@@ -135,9 +135,6 @@ gap_lm %>% unnest(augmented, .drop = TRUE)
 ## 処理がやや複雑なため、ここでは解析結果ファイル iPhone_df.Rdataをロードします。
 ## 詳細は、近著『Rによるテキストマイニング入門 応用編』森北出版をご参照ください。
 
-
-## ----echo=FALSE----------------------------------------------------------
-load("/home/ishida/Dropbox/R/Lectures/2019/Osaka/tutorial2019/iPhone.Rdata")
 
 
 ## ------------------------------------------------------------------------
