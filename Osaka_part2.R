@@ -6,7 +6,7 @@ library(broom)
 library(glmnet)
 
 
-## --------------------------------------------------------------
+## ----echo=FALSE----------------------------------------------------------
 gapminder <- gapminder %>% 
   filter(country %in% c("Japan", "China", "Korea, Rep."))
 
@@ -20,9 +20,19 @@ p <- gapminder %>%
   geom_line()
 
 
-## --------------------------------------------------------------
+## ----echo=FALSE----------------------------------------------------------
 p
 
+
+## ----eval=FALSE----------------------------------------------------------
+## gapminder %>% filter(country == "China") %>%
+##   select(lifeExp, gdpPercap) %>% cor()
+## 
+## gapminder %>% filter(country == "Korea, Rep.") %>%
+##   select(lifeExp, gdpPercap) %>% cor()
+## 
+## gapminder %>% filter(country == "Japan") %>%
+##   select(lifeExp, gdpPercap) %>% cor()
 
 
 ## ------------------------------------------------------------------------
@@ -30,12 +40,7 @@ gapminder %>% filter(country == "China") %>%
   cor.test(data=., ~ lifeExp +gdpPercap)
 
 
-## ----, ----------------------------------------------
-## # https://cran.r-project.org/web/packages/broom/vignettes/broom_and_dplyr.html
-## # https://suryu.me/post/r_advent_calendar_day3/
-
-
-## --------------------------------------------------------------
+## ----echo=FALSE----------------------------------------------------------
 library(broom)
 
 
@@ -56,12 +61,13 @@ gapminder %>% nest (-country) %>% select(data) %>%
 
 
 ## ------------------------------------------------------------------------
-list(x = 1:3, y=1:6, z= 1:10) %>% map(mean)
+list(x = 1:3, y=1:6, z= 1:10) %>% map(~mean(.))
 
 
-## ------------------------------------------------------------------------
-dat <- list.files(pattern = "*.csv") %>% 
-  map_df(read_csv)
+## ----eval=FALSE----------------------------------------------------------
+## dat <- list.files(pattern = "*.csv") %>%
+##           map_df(read_csv)
+
 
 ## ------------------------------------------------------------------------
 gapminder %>%  nest (-country) %>% 
@@ -87,25 +93,26 @@ gapminder %>% filter(country == "Japan") %>%
 
 ## ------------------------------------------------------------------------
   gapminder %>% nest (-country) %>% 
-  mutate(fit = map(data, ~ lm(data=.x, lifeExp ~ gdpPercap)),
+  mutate(fit = map(data, ~ 
+            lm(data=.x, lifeExp ~ gdpPercap)),
          res = map(fit, tidy)) %>% unnest(res)
 
 
 ## ------------------------------------------------------------------------
 gapminder %>% nest (-country) %>% 
-   mutate(fit = map(data, ~ lm(data=.x, lifeExp ~ gdpPercap)),
+   mutate(fit = map(data, 
+            ~ lm(data=.x, lifeExp ~ gdpPercap)),
           res = map(fit, tidy),
           glanced = map(fit, glance),
           augmented = map(fit, augment)) 
 
 
-## --------------------------------------------------------------
+## ----echo=FALSE----------------------------------------------------------
 gap_lm <- gapminder %>% nest (-country) %>% 
    mutate(fit = map(data, ~ lm(data=.x, lifeExp ~ gdpPercap)),
           res = map(fit, tidy),
           glanced = map(fit, glance),
           augmented = map(fit, augment)) 
-
 
 
 ## ------------------------------------------------------------------------
@@ -116,59 +123,34 @@ gap_lm %>% unnest(glanced, .drop = TRUE)
 gap_lm %>% unnest(augmented, .drop = TRUE)
 
 
-## 機械学習
-
-## http://bigdata.naist.jp/~ysuzuki/data/twitter/
-
-library(tidyverse)
-tweets <- read_csv("tweets_open.csv", 
-                   col_names = c("id", "genre", "status_id", 
-                                 "PN", "Po", "Ne", "Neu", "Non"),
-                   col_types = "ccclllll")
-
-library(rtweet)# GitHub版 https://github.com/mkearney/rtweet をインストールして利用するのが手軽 
-iPhone <- tweets %>% filter(Genre == "10021") %>% 
-  select(status_id) %>% 
-  pull() %>% lookup_tweets()
-
-iPhone_data <- iPhone %>% select(status_id,text) %>% 
-  left_join(tweets)
-
-iPhone_data <- iPhone_data %>% filter(xor(Po, Ne))  %>% 
-  select(status_id, text, Po)
-
-library(RMeCab)
-rmecabc_po <- function(id, po, txt){
-  txt <- unlist(RMeCabC(txt, 1))
-  txt  <- txt[names(txt) %in% c("名詞")] 
-  tibble(status_id = id, Po = po, TERM = txt)
-}
-
-iPhone_tokens <- pmap_dfr(list(iPhone_data$status_id, 
-                               iPhone_data$Po, 
-                               iPhone_data$text),
-                          ~ rmecabc_po(..1, ..2, ..3)
-)
-
-iPhone_counts <- iPhone_tokens %>% count(status_id, 
-                                         TERM, sort = TRUE)
-
-iPhone_counts  <- iPhone_counts %>% 
-  filter(!str_detect(TERM,
-                     "[[:punct:]]|[[:digit:]]"))
-
-
-## --------- 加工済みデータ -----------------------------------------------------
-download.file("https://github.com/IshidaMotohiro/tutorial2019/blob/master/iPhone_mat.Rdata?raw=true", destfile= "iPhone_mat.Rdata")
-load("iPhone_mat.Rdata")
+## ----eval=FALSE----------------------------------------------------------
+## library(rtweet)
+## iPhone <- tw_lists %>% select(status_id) %>%
+##                          pull() %>% lookup_tweets()
 
 
 
+## ----echo=FALSE, eval=FALSE----------------------------------------------
+## ツィートデータのstatus_idごとにstext列を形態素解析にかけ、その結果をデータフレームに変換しますが、
+## 処理がやや複雑なため、ここでは解析結果ファイル iPhone_df.Rdataをロードします。
+## 詳細は、近著『Rによるテキストマイニング入門 応用編』森北出版をご参照ください。
 
-## --------------------------------------------------------------
-iPhone_glm <- glm(Y ~ ., data= iPhone_mat,
-                  family = binomial())
-summary(iPhone_glm)
+
+## ----echo=FALSE----------------------------------------------------------
+load("/home/ishida/Dropbox/R/Lectures/2019/Osaka/tutorial2019/iPhone.Rdata")
+
+
+## ------------------------------------------------------------------------
+iPhone %>% dim()
+
+
+## ------------------------------------------------------------------------
+table(iPhone$Y)
+
+
+## ----eval=FALSE----------------------------------------------------------
+iPhone_glm <- glm(Y ~ . , data= iPhone,   family = binomial())
+
 
 
 ## ------------------------------------------------------------------------
@@ -178,128 +160,125 @@ iPhone_glm %>% tidy()
 
 ## ------------------------------------------------------------------------
 library(broom)
-iPhone_glm %>% tidy() %>% filter(p.value < .05)
+iPhone_glm %>% tidy() %>% filter(p.value < .01) %>% 
+  arrange(p.value)
 
 
 ## ------------------------------------------------------------------------
-pred <- round(
+preds <- round(
   predict(iPhone_glm,
   type="response"))
 
 
 ## ------------------------------------------------------------------------
-table(pred, iPhone_mat$Y) 
+table(preds, iPhone$Y) 
 
 
-## ----- lasso 回帰 ----------------------------------------------
-
-## ----- データを説明変数（行列）と目的変数に分離-------------------------------------------------------------------
-iPhone_X <- iPhone_mat %>% 
-  select(-Y) %>% 
-   as.matrix(dimnames = list(NULL, 
-     colnames(iPhone_mat)))#列名（単語）を残す
-
-iPhone_Y <- iPhone_mat$Y
+## ----eval=FALSE, echo=FALSE----------------------------------------------
+## 
+## $min \left [ \frac{1}{2N} \sum_{i=1}^N (y_i - \beta_0 - x_i^T \beta) + \lambda P_\alpha (\beta) \right]$
+## $P_\alpha (\beta) = \sum_{j=1}^p \left[ \frac{1}{2} (1 - \alpha) \beta_j^2 + \alpha|\beta_j| \right]$
+## 
 
 
-
-## --------------------------------------------------------------
-library(glmnet)
-lasso_ <- glmnet(
-  x = iPhone_X,
-  y = iPhone_Y,
-  family= "binomial")
-
-
-## --------------------------------------------------------------
-plot(lasso_, xvar = "lambda")
+## ----eval=FALSE----------------------------------------------------------
+## index <- sample(N,
+##              N * 0.5)
+## index %>% NROW()
+## train <- dat[index, ]
+## test <-  dat[-index, ]
 
 
-## ------------------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
+## index <- createDataPartition
+##   (y = dat$Y, p = 0.7)
+## train <- dat[ index,  ]
+## test  <- dat[-index, ]
+
+
+## ----echo=FALSE----------------------------------------------------------
 library(caret)
-# set.seed(123)
-index <- createDataPartition(
-  y = iPhone_mat$Y,
-  p = 0.7,
-  list = FALSE
-)
-training <- iPhone_mat[ index,  ]
-testing  <- iPhone_mat[-index, ]
+set.seed(123) # 再現性のため乱数の種を設定
+index <- createDataPartition(y = iPhone$Y, p = 0.7, list = FALSE)
+training <- iPhone[ index,  ]
+testing  <- iPhone[-index, ] 
 
 
 ## ------------------------------------------------------------------------
-## 訓練データを説明行列Xと目的変数yに
-X <- training %>% select(-Y) %>% 
-       as.matrix(dimnames = list(NULL, 
-                 colnames(training)))#列名（単語）を残す
-y <- training$Y
-## テストデータも　y2 と X2 に分ける
-X2 <- testing %>% select(-Y) %>% 
-   as.matrix(dimnames = list(NULL, 
-     colnames(training)))#列名（単語）を残す
-y2 <- testing$Y
+# 訓練データを整形して行列にする
+train_X <- training %>% select(-Y) %>% 
+  as.matrix(dimnames = list(NULL, colnames(.))) #列名（単語）を残す
+# 目的変数のベクトル
+train_Y <- training$Y
+# テストデータを整形して行列にする
+test_X <- testing %>% select(-Y) %>% 
+  as.matrix(dimnames = list(NULL, colnames(.))) #列名（単語）を残す
+# 目的変数のベクトル
+test_Y <- testing$Y
 
 
-## ----- 並列化 ---------------------------------------------------------
-library(doParallel)# 並列化
-cl <- makeCluster(4) 
-registerDoParallel(cl)
-
-## ------（時間がかかる処理）--------------------------------------------------------
-lasso_cv <-
-  cv.glmnet(
-   x = X,
-   y = y,
-   alpha = 1,
-   family = "binomial",
-   parallel = TRUE)
 
 
-## --------------------------------------------------------------
-plot(lasso_cv)
+## ----echo=FALSE----------------------------------------------------------
+plot(lasso)
 
 
 ## ------------------------------------------------------------------------
-lasso_cv$lambda.min; lasso_cv$lambda.1se
+lasso$lambda.min; lasso$lambda.1se
 
 
 ## ------------------------------------------------------------------------
-preds <- predict(lasso_cv$glmnet.fit, newx = X2,
-                 s = lasso_cv$lambda.min, 
-                 type = "response")
-# predは確率なので、丸めて１か０にする
-table(round(preds), testing$Y)
+lasso_preds <- predict(lasso, newx = test_X, 
+                       type = "class")
+confusionMatrix(table(lasso_preds, test_Y))
 
 
 ## ------------------------------------------------------------------------
 library(pROC)
-lasso_auc_pred <- predict(lasso_cv, s = "lambda.min", 
-                          newx = X2, type = "response")
-lasso_roc <- roc(y2, as.numeric(lasso_auc_pred))
+lasso_response <- predict(
+  lasso, s = "lambda.min", 
+  newx = test_X, 
+  type = "response")
+lasso_roc <- roc(test_Y, 
+as.numeric(lasso_response))
 
 
 ## ------------------------------------------------------------------------
 ggroc(lasso_roc, legacy.axes = TRUE)
 
 
-## ------------------------------------------------------------------------
-auc(lasso_roc)
-
-
-## --------------------------------------------------------------
-## lasso_cv_auc <- cv.glmnet(
-##   x = X,
-##   y = y,
+## ----eval=FALSE----------------------------------------------------------
+## lasso_cv_auc <- cv.glmnet(x = X, y = y,
 ##   type.measure = "auc",#aucを指定
-##   alpha = 1, family = "binomial",
-##   parallel = TRUE)
+##   alpha = 1, family = "binomial")
 
 
-## --------------------------------------------------------------
-library(caret)
-train_cntrl <-trainControl(method = "cv", number = 10)
-train_grid <- expand.grid(alpha  = seq(0, 1.0, by = 0.01) ,
-                          lambda = 10^(0:10 * -1))
+## ----eval=FALSE----------------------------------------------------------
+## library(kernlab)
+## svm_kernlab  <- ksvm(Y ~ .,
+##       data = training, scaled = FALSE,
+##       kernel="rbfdot", type="C-svc",
+##       cross = 10)
+
+
+## ----eval=FALSE----------------------------------------------------------
+## caret::train(
+##         x = 説明変数
+##         , y = 目的変数
+##         , method = 分析手法
+##         , tuneGrid = モデルパラメータの範囲
+##         , trControl = 交差法の指定
+##         , preProcess = データの加工指定
+##         )
+
+
+## ----eval=FALSE----------------------------------------------------------
+## library(caret)
+## train_cntrl <-trainControl(method = "cv",
+##         number = 10)
+## train_grid <- expand.grid(
+##         alpha  = seq(0, 1.0, by = 0.01) ,
+##         lambda = 10^(0:10 * -1))
 
 
 ## ------------------------------------------------------------------------
@@ -307,26 +286,99 @@ preProcess = c("center", "scale")
 preProcess = c("pca")#この場合はcenterとscaleも適用される
 
 
-## --------------------------------------------------------------
-elastic  <- train(x = X,
-                  y = as.factor(y),
-                  method = "glmnet",
-                  tuneGrid = train_grid,
-                  trControl = train_cntrl,
-                  preProcess = c("center", "scale"))
+## ----eval=FALSE----------------------------------------------------------
+## caret::train(Y ~ ., data = training
+##          , method = "glmnet"
+##          , tuneGrid = train_grid
+##          , trControl = train_cntrl
+##          # , preProcess = c("center", "scale")
+##          )
 
 
-## ----, ----------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
+## caret::train(Y ~ ., data = training,
+##        , method = "svmRadial",
+##        , tuneGrid = expand.grid(C = 1:10,
+##        ,   sigma = seq(0.0, 0.9, by = 0.1),
+##        , trControl = trainControl(
+##        ,       method = "cv", number = 10),
+##        # ,preProcess = c("center", "scale")
+##        )
+
+
+## ----message=TRUE--------------------------------------------------------
 library(tidymodels)
-splitted_data <- initial_split(iPhone, p = 0.5, strata = c('Y'))
-training_data <- training(splitted_data)
-training_data <- training_data %>% mutate(Y = as.factor(Y))
+
+
+## ------------------------------------------------------------------------
+splitted_data <- initial_split(iPhone, 
+                  p = 0.5, strata = c('Y')) 
+train_data <- training(splitted_data)
 test_data <- testing(splitted_data)
-test_data <- test_data %>% mutate(Y = as.factor(Y))
-rec <- recipe(Po ~ ., data = training_data)
-rec_dat <- rec %>% prep(training = training_data)
-train_baked <- rec_dat %>% juice()
+
+
+## ------------------------------------------------------------------------
+rec <- recipe(Y ~ ., data = train_data)
+
+
+## ------------------------------------------------------------------------
+rec_dat <- rec %>% prep(training = train_data)
+
+
+## ------------------------------------------------------------------------
+train_baked <- rec_dat %>% juice() 
 test_baked <- rec_dat %>% bake(test_data)
-logistic_reg(mixture = 0, penalty  = 10^(0:10 * -1)) %>%
-                       set_engine("glmnet")
+
+
+## ----eval=FALSE----------------------------------------------------------
+glmnet_model_tidy <- logistic_reg(mixture = 0,
+                       penalty = 10^(0:5 * -1)) %>%
+                         set_engine("glmnet")
+
+
+
+## ----eval=FALSE----------------------------------------------------------
+lasso_tidy <- glmnet_model_tidy %>%
+  fit(Y ~ ., data = train_baked)
+
+
+## ------------------------------------------------------------------------
+preds  <- test_baked %>% 
+  select(Y) %>% 
+  bind_cols(fitted = 
+  multi_predict(lasso_tidy, 
+                test_baked))
+
+
+## ------------------------------------------------------------------------
+preds
+
+
+## ------------------------------------------------------------------------
+preds$.pred[[1]]
+
+
+## ------------------------------------------------------------------------
+preds_flat <- preds %>% 
+  mutate(.pred = 
+  map(.pred, bind_rows)) %>% 
+  unnest()
+
+
+## ------------------------------------------------------------------------
+preds_flat
+
+
+## ------------------------------------------------------------------------
+preds_flat %>% group_by(penalty) %>% 
+  metrics(Y, .pred)
+
+
+## ----eval=FALSE----------------------------------------------------------
+rf_tidy <- rand_forest(mode = "classification",
+              trees = 20, min_n = 100,
+              mtry = 1000) %>%
+                set_engine("randomForest", seed = 123)
+rf_tidy_fit <- tf_tidy %>% fit(Y ~ .,
+                               data = train_baked)
 
