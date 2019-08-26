@@ -169,9 +169,50 @@ yoko2
 df %>% head()
 
 
-## ------------------------------------------------------------------------
-df %>% gather(key = Doc, value = FREQ, 
-              文書1, 文書2, 文書3) %>% head()
+## ---RMeCab の docDF() の返すオブジェクトを縦型に変更する ------------------
+library(tidyverse)
+tidy_df <- df %>% gather(key = Doc, value = FREQ,  文書1, 文書2, 文書3) 
+tidy_tib <- as_tibble(tidy_df) # この操作は必須ではない
+
+## ** tidy dataに対する操作
+### *** 列を抽出する select() 　例：「文書1」 のレコードのみ取り出す方法。 Doc 列が「文書１」であるレコードを抽出する
+#### - tidyな形式の場合に
+tidy_tib  %>% filter( Doc == "文書1" ) 
+
+#### - messy な形式の場合は「列名」として指定する
+df %>% select( 文書1 ) 
+
+
+### *** 列の検索 filter() 　例：単語が「理工」であるレコード、あるいは品詞が「名詞ないし形容詞ないし動詞」であるレコードを抽出する方法。
+#### - tidyデータの場合
+
+tidy_tib  %>% filter( TERM  == "理工" )
+tidy_tib  %>% filter( POS1 %in% c("名詞", "形容詞", "動詞") )
+
+#### - messyな場合も同じ
+df %>% filter( TERM == "理工" )
+df %>% filter( POS1 %in% c("名詞", "形容詞", "動詞") )
+
+
+### *** 列の追加 mutate() + group_by() + summarise() 　例：文書の違いを無視して、単語（TERM列）でまとめて合計する。
+#### - tidyデータの場合 `tyd_tb` には例えば「。」が３行ある。文書が３種類あり、それぞれごとに頻度が計算されているからである。そこで文書３つを統合した頻度を知りたいとする。
+
+tidy_tb %>% filter(TERM == "。") 
+tidy_tib  %>% group_by(TERM, POS1, POS2) %>% summarize(FREQ = sum(FREQ)) 
+
+#### - messyな場合  新たに「合計」という列を追加する。 ただし、横（行）方向に合計をとる必要があるので `rowwise()` 併用し各文書での単語出現頻度を合計する
+df %>% rowwise() %>% mutate(合計 = sum(文書1, 文書2, 文書3))
+
+
+
+### ***  列の要約  例：summarize()　文書ごとの総語数を数える
+
+#### - tidyデータの場合
+
+tidy_tib %>% group_by(Doc) %>% summarise(FREQ = sum(FREQ))
+
+#### - messyな場合　# 数値が記録された列を指定して（is.numeric）合計を求める
+df %>% summarize_if(is.numeric, sum)
 
 
 
@@ -193,7 +234,7 @@ df %>% gather(key = Doc, value = FREQ,
 source("http://rmecab.jp/R/Rprofile.R")
 
 
-## --------------------------------------------------------------
+## ---------- messyな形式からtidyな形式に変換が必要 ----------------------------------------------------
 doc <- df %>% gather(key = Doc, 
   value = FREQ, 
   文書1, 文書2, 文書3) 

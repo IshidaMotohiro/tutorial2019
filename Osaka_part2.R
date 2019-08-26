@@ -60,6 +60,10 @@ list(x = 1:3, y=1:6, z= 1:10) %>% map(mean)
 
 
 ## ------------------------------------------------------------------------
+dat <- list.files(pattern = "*.csv") %>% 
+  map_df(read_csv)
+
+## ------------------------------------------------------------------------
 gapminder %>%  nest (-country) %>% 
   mutate(AVG = map(data, ~ mean(.$lifeExp))) 
 
@@ -114,15 +118,55 @@ gap_lm %>% unnest(augmented, .drop = TRUE)
 
 ## 機械学習
 
+## http://bigdata.naist.jp/~ysuzuki/data/twitter/
+
+library(tidyverse)
+tweets <- read_csv("tweets_open.csv", 
+                   col_names = c("id", "genre", "status_id", 
+                                 "PN", "Po", "Ne", "Neu", "Non"),
+                   col_types = "ccclllll")
+
+library(rtweet)# GitHub版 https://github.com/mkearney/rtweet をインストールして利用するのが手軽 
+iPhone <- tweets %>% filter(Genre == "10021") %>% 
+  select(status_id) %>% 
+  pull() %>% lookup_tweets()
+
+iPhone_data <- iPhone %>% select(status_id,text) %>% 
+  left_join(tweets)
+
+iPhone_data <- iPhone_data %>% filter(xor(Po, Ne))  %>% 
+  select(status_id, text, Po)
+
+library(RMeCab)
+rmecabc_po <- function(id, po, txt){
+  txt <- unlist(RMeCabC(txt, 1))
+  txt  <- txt[names(txt) %in% c("名詞")] 
+  tibble(status_id = id, Po = po, TERM = txt)
+}
+
+iPhone_tokens <- pmap_dfr(list(iPhone_data$status_id, 
+                               iPhone_data$Po, 
+                               iPhone_data$text),
+                          ~ rmecabc_po(..1, ..2, ..3)
+)
+
+iPhone_counts <- iPhone_tokens %>% count(status_id, 
+                                         TERM, sort = TRUE)
+
+iPhone_counts  <- iPhone_counts %>% 
+  filter(!str_detect(TERM,
+                     "[[:punct:]]|[[:digit:]]"))
+
+
 ## --------- 加工済みデータ -----------------------------------------------------
-download.file("https://github.com/IshidaMotohiro/tutorial2019/blob/master/iPhone.Rdata?raw=true", destfile= "iPhone.Rdata")
-load("iPhone.Rdata")
+download.file("https://github.com/IshidaMotohiro/tutorial2019/blob/master/iPhone_mat.Rdata?raw=true", destfile= "iPhone_mat.Rdata")
+load("iPhone_mat.Rdata")
 
 
 
 
 ## --------------------------------------------------------------
-iPhone_glm <- glm(Y ~ ., data= iPhone,
+iPhone_glm <- glm(Y ~ ., data= iPhone_mat,
                   family = binomial())
 summary(iPhone_glm)
 
@@ -144,17 +188,18 @@ pred <- round(
 
 
 ## ------------------------------------------------------------------------
-table(pred, iPhone$Y) 
+table(pred, iPhone_mat$Y) 
 
 
 ## ----- lasso 回帰 ----------------------------------------------
 
 ## ----- データを説明変数（行列）と目的変数に分離-------------------------------------------------------------------
-iPhone_X <- iPhone %>% 
+iPhone_X <- iPhone_mat %>% 
   select(-Y) %>% 
    as.matrix(dimnames = list(NULL, 
-     colnames(iPhone)))#列名（単語）を残す
+     colnames(iPhone_mat)))#列名（単語）を残す
 
+iPhone_Y <- iPhone_mat$Y
 
 
 
@@ -162,7 +207,7 @@ iPhone_X <- iPhone %>%
 library(glmnet)
 lasso_ <- glmnet(
   x = iPhone_X,
-  y = iPhone$Y,
+  y = iPhone_Y,
   family= "binomial")
 
 
@@ -174,12 +219,12 @@ plot(lasso_, xvar = "lambda")
 library(caret)
 # set.seed(123)
 index <- createDataPartition(
-  y = iPhone$Y,
+  y = iPhone_mat$Y,
   p = 0.7,
   list = FALSE
 )
-training <- iPhone[ index,  ]
-testing  <- iPhone[-index, ]
+training <- iPhone_mat[ index,  ]
+testing  <- iPhone_mat[-index, ]
 
 
 ## ------------------------------------------------------------------------
