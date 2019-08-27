@@ -9,7 +9,7 @@
 - tutorial2019.zip はチュートリアル資料に掲載されたコードを抜き出したスクリプトです。
 
 - data.zip はスクリプトで利用しているデータです。
-  + df.Rdata, iPhone.Rdata, seiseki.xlsx, excelフォルダ が含まれています。(iPhoneRdataは *tidyverse* パッケージの機能を利用して作成したデータであるため、*tidyverse* が必要となります）
+  + df.Rdata, iPhone.Rdata, seiseki.xlsx, excelフォルダ が含まれています。(iPhone.Rdataは *tidyverse* パッケージの機能を利用して作成したデータであるため、*tidyverse* が必要となります）
 
 ＊ 現在はOsaka_tutorial.pdf と tutorial2019.zip にパスワードをかけています。パスワードは行動計量学会第47回大会実行本部にお尋ねください。なお、ダウンロード時にウィルスチェックソフトが（中身をチェックできないとの）警告を出す場合がありますが、こちらでチェック済みですので、そのままダウンロード・解凍してください。
 
