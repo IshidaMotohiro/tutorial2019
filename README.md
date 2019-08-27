@@ -6,7 +6,7 @@
 
 - Osaka_tutorial.pdf がチュートリアル資料です。
 
-- tutorial2019.zip はチュートリアル資料に掲載されたコードを抜き出したスクリプトです。なお、文字コードは UTF-8 です。RStudioの File -> ReopenWithEncoding -> UTF-8 として表示を直し、UTF-8 ファイルとして利用してください。
+- tutorial2019.zip はチュートリアル資料に掲載されたコードを抜き出したスクリプトです。なお、文字コードは UTF-8 です。Windowsでは RStudioの File -> ReopenWithEncoding -> UTF-8 として表示を直し、UTF-8 ファイルとして利用してください。
 
 - data.zip はスクリプトで利用しているデータです。
   + df.Rdata, iPhone.Rdata, seiseki.xlsx, excelフォルダ が含まれています。(iPhone.Rdataは *tidyverse* パッケージの機能を利用して作成したデータであるため、*tidyverse* が必要となります）
